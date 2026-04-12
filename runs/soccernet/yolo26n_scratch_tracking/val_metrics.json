@@ -1,0 +1,120 @@
+{
+  "summary": {
+    "precision": 0.8463757403181695,
+    "recall": 0.608112943994691,
+    "mAP50": 0.6851045622672156,
+    "mAP75": 0.45862197171050284,
+    "mAP50_95": 0.4173342851596486
+  },
+  "per_class_mAP50_95": {
+    "player": 0.6275788922893727,
+    "goalkeeper": 0.5302789925847918,
+    "referee": 0.595281562837928,
+    "ball": 0.08311728146935819,
+    "staff": 0.4173342851596486,
+    "other": 0.2504146966167925
+  },
+  "results_dict": {
+    "metrics/precision(B)": 0.8463757403181695,
+    "metrics/recall(B)": 0.608112943994691,
+    "metrics/mAP50(B)": 0.6851045622672156,
+    "metrics/mAP50-95(B)": 0.4173342851596486,
+    "fitness": 0.4173342851596486
+  },
+  "speed_ms_per_image": {
+    "preprocess": 0.2808649633769636,
+    "inference": 4.069241353207165,
+    "loss": 0.0006210820542441474,
+    "postprocess": 0.05168209528481518
+  },
+  "dataset_manifest": {
+    "tracking_root": "/data/aanil/aanil/side/yolo/datasets/Soccernet/tracking/train",
+    "prepared_root": "/data/aanil/aanil/side/yolo/datasets/Soccernet/tracking/yolo26_detect",
+    "class_scheme": "coarse",
+    "class_names": [
+      "player",
+      "goalkeeper",
+      "referee",
+      "ball",
+      "staff",
+      "other"
+    ],
+    "seed": 42,
+    "val_ratio": 0.15,
+    "frame_stride": 1,
+    "splits": {
+      "train_sequences": [
+        "SNMOT-060",
+        "SNMOT-061",
+        "SNMOT-062",
+        "SNMOT-063",
+        "SNMOT-064",
+        "SNMOT-065",
+        "SNMOT-066",
+        "SNMOT-067",
+        "SNMOT-068",
+        "SNMOT-069",
+        "SNMOT-070",
+        "SNMOT-072",
+        "SNMOT-073",
+        "SNMOT-074",
+        "SNMOT-075",
+        "SNMOT-077",
+        "SNMOT-097",
+        "SNMOT-098",
+        "SNMOT-100",
+        "SNMOT-101",
+        "SNMOT-103",
+        "SNMOT-104",
+        "SNMOT-105",
+        "SNMOT-106",
+        "SNMOT-107",
+        "SNMOT-108",
+        "SNMOT-109",
+        "SNMOT-110",
+        "SNMOT-111",
+        "SNMOT-113",
+        "SNMOT-114",
+        "SNMOT-151",
+        "SNMOT-152",
+        "SNMOT-153",
+        "SNMOT-154",
+        "SNMOT-155",
+        "SNMOT-156",
+        "SNMOT-157",
+        "SNMOT-158",
+        "SNMOT-159",
+        "SNMOT-160",
+        "SNMOT-161",
+        "SNMOT-162",
+        "SNMOT-163",
+        "SNMOT-164",
+        "SNMOT-167",
+        "SNMOT-168",
+        "SNMOT-170"
+      ],
+      "val_sequences": [
+        "SNMOT-071",
+        "SNMOT-076",
+        "SNMOT-099",
+        "SNMOT-102",
+        "SNMOT-112",
+        "SNMOT-115",
+        "SNMOT-165",
+        "SNMOT-166",
+        "SNMOT-169"
+      ]
+    },
+    "stats": {
+      "train_images": 36000,
+      "val_images": 6750,
+      "train_boxes": 613991,
+      "val_boxes": 119010
+    }
+  },
+  "artifacts": {
+    "prepared_root": "/data/aanil/aanil/side/yolo/datasets/Soccernet/tracking/yolo26_detect",
+    "data_yaml": "/data/aanil/aanil/side/yolo/datasets/Soccernet/tracking/yolo26_detect/soccernet_tracking_detect.yaml",
+    "best_weights": "/data/aanil/aanil/side/yolo/runs/soccernet/yolo26n_scratch_tracking/weights/best.pt"
+  }
+}
