@@ -12,27 +12,32 @@ NOTE: The current keypoint_data labels only contain bounding box format.
 from ultralytics import YOLO
 import torch
 from pathlib import Path
+from clearml import Task, OutputModel
+
+
 
 # Configuration
 DATA_YAML = "./data/keypoint_data/data.yaml"
-MODEL_SIZE = "yolo26n"  # nano, small, medium, large, xlarge
+MODEL_SIZE = "yolo26s"  
 MODEL_VARIANT = "pose"  
 EPOCHS = 100
 IMG_SIZE = 640
 DEVICE = "0" if torch.cuda.is_available() else "cpu"
 PROJECT_NAME = "runs/pose"
-RUN_NAME = "yolo26n_pitch_keypoints_scratch"
+RUN_NAME = "key_point_detection"
 
 def main():
     """Train YOLO26 pose model from scratch."""
-    
+    task = Task.init(
+        project_name="PitchSense",
+        task_name="yolo26s_keypoint_detection_baseline",
+        task_type=Task.TaskTypes.training,
+    )
     print(f"Training YOLO26-{MODEL_SIZE}-{MODEL_VARIANT} from scratch")
     print(f"Device: {DEVICE}")
     print(f"Data: {DATA_YAML}")
     print("-" * 50)
-    
-    # Load model (pose variant)
-    # Note: For pose, use 'yolo26n-pose' or similar variant
+  
     model = YOLO(f"{MODEL_SIZE}-{MODEL_VARIANT}")
     
     # Train the model
@@ -50,6 +55,7 @@ def main():
     print("-" * 50)
     print("Training complete!")
     print(f"Results saved to: {PROJECT_NAME}/{RUN_NAME}")
+    task.close()
 
 if __name__ == "__main__":
     main()
