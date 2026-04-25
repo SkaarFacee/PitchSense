@@ -17,14 +17,14 @@ from clearml import Task, OutputModel
 
 
 # Configuration
-DATA_YAML = "./data/keypoint_data/data.yaml"
+DATA_YAML = "/home/aanil/Data/aanil/side/yolo/datasets/keypoint_model/data.yaml"
 MODEL_SIZE = "yolo26s"  
 MODEL_VARIANT = "pose"  
-EPOCHS = 100
+EPOCHS = 200
 IMG_SIZE = 640
-DEVICE = "0" if torch.cuda.is_available() else "cpu"
-PROJECT_NAME = "runs/pose"
-RUN_NAME = "key_point_detection"
+DEVICE = [0,1] if torch.cuda.is_available() else "cpu"
+PROJECT_NAME = "runs/baseline_keypoint"
+RUN_NAME = "baseline"
 
 def main():
     """Train YOLO26 pose model from scratch."""
@@ -49,7 +49,7 @@ def main():
         project=PROJECT_NAME,
         name=RUN_NAME,
         verbose=True, 
-        pretrained=False,  # Start from scratch (random initialization)
+        pretrained=False, 
     )
     
     print("-" * 50)

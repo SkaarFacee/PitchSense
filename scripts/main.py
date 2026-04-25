@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 
 import torch
 import yaml
-from clearml import Task, OutputModel
+from clearml import Task, OutputModel, Dataset
 from torch.utils.data import random_split
 from ultralytics import YOLO
 
@@ -12,12 +12,12 @@ from datasetLoader import PitchSenseDataset
 
 
 BASE_PATH = "/home/aanil/Data/aanil/side/yolo/datasets/Soccernet/tracking"
-OUTPUT_ROOT = pathlib.Path("/home/aanil/Data/aanil/side/yolo/outputs/baseline_200epochs")
+OUTPUT_ROOT = pathlib.Path("/home/aanil/Data/aanil/side/yolo/outputs/yolo_26n_baseline_200epochs")
 SAVE_DIR = OUTPUT_ROOT / "saved_models"
 
 MODEL_NAME = "yolo26n.yaml"  
 VAL_RATIO = 0.15
-SEED = 42
+SEED = 10
 EPOCHS = 200
 IMGSZ = 1280
 BATCH = 32  
@@ -150,6 +150,7 @@ def write_dataset_yaml(out_root: pathlib.Path, class_names: List[str]) -> pathli
         "path": str(out_root),
         "train": "images/train",
         "val": "images/val",
+        "test": "images/test",
         "names": {idx: name for idx, name in enumerate(class_names)},
     }
 
@@ -173,10 +174,30 @@ def copy_best_weights(save_dir: pathlib.Path, run_name: str) -> pathlib.Path | N
     return None
 
 
+def push_yolo_dataset_to_clearml(out_root: pathlib.Path) -> Dataset:
+    clearml_dataset = Dataset.create(
+        dataset_name="soccernet_tracking",
+        dataset_project="PitchSense/Datasets",
+        description=(
+            "YOLO-format SoccerNet tracking export. "
+            "Contains images/train, images/val, images/test, "
+            "labels/train, labels/val, labels/test, and dataset.yaml."
+        ),
+    )
+
+    clearml_dataset.add_files(path=str(out_root))
+    clearml_dataset.upload()
+    clearml_dataset.finalize()
+
+    print(f"ClearML dataset uploaded.")
+    print(f"ClearML dataset ID: {clearml_dataset.id}")
+
+    return clearml_dataset
+
 def main() -> None:
     task = Task.init(
         project_name="PitchSense",
-        task_name="yolo26n_baseline_scratch",
+        task_name="yolo26n_baseline",
         task_type=Task.TaskTypes.training,
     )
 
@@ -197,20 +218,17 @@ def main() -> None:
         }
     )
 
-    logger = task.get_logger()
+
 
     print("CUDA available:", torch.cuda.is_available())
     print("CUDA device count:", torch.cuda.device_count())
     print("Training device:", DEVICE)
 
-    logger.report_text(f"CUDA available: {torch.cuda.is_available()}")
-    logger.report_text(f"CUDA device count: {torch.cuda.device_count()}")
-    logger.report_text(f"Training device: {DEVICE}")
-
     train_root = PATHS.train_path
     test_root = PATHS.test_path
 
-    dataset = PitchSenseDataset([train_root, test_root])
+    dataset = PitchSenseDataset([train_root])
+    test_dataset = PitchSenseDataset([test_root])
 
     val_size = int(len(dataset) * VAL_RATIO)
     train_size = len(dataset) - val_size
@@ -224,14 +242,10 @@ def main() -> None:
     print(f"Dataset samples: {len(dataset)}")
     print(f"Train samples: {len(train_dataset)}")
     print(f"Val samples: {len(val_dataset)}")
-
-    logger.report_scalar("dataset", "total_samples", value=len(dataset), iteration=0)
-    logger.report_scalar("dataset", "train_samples", value=len(train_dataset), iteration=0)
-    logger.report_scalar("dataset", "val_samples", value=len(val_dataset), iteration=0)
+    print(f"Test samples: {len(test_dataset)}")
 
     class_map, class_names = build_class_mapping(dataset)
     print("Class mapping:", class_map)
-    logger.report_text(f"Class mapping: {class_map}")
 
     if OUTPUT_ROOT.exists():
         shutil.rmtree(OUTPUT_ROOT)
@@ -241,12 +255,16 @@ def main() -> None:
 
     export_split(train_dataset, "train", OUTPUT_ROOT, class_map)
     export_split(val_dataset, "val", OUTPUT_ROOT, class_map)
+    export_split(test_dataset, "test", OUTPUT_ROOT, class_map)
 
     yaml_path = write_dataset_yaml(OUTPUT_ROOT, class_names)
     print(f"YOLO dataset yaml written to: {yaml_path}")
     task.upload_artifact("dataset_yaml", artifact_object=str(yaml_path))
 
-    run_name = "yolo26n_baseline_scratch"
+    clearml_dataset = push_yolo_dataset_to_clearml(OUTPUT_ROOT)
+    task.upload_artifact("clearml_dataset_id", artifact_object=clearml_dataset.id)
+    
+    run_name = "yolo26n_baseline"
 
     model = YOLO(MODEL_NAME)
     model.train(
@@ -267,6 +285,20 @@ def main() -> None:
         output_model = OutputModel(task=task, name="yolo26n_best")
         output_model.update_weights(weights_filename=str(final_model_path))
         task.upload_artifact("best_model", artifact_object=str(final_model_path))
+
+        model = YOLO(str(final_model_path))
+        test_results = model.val(
+            data=str(yaml_path),
+            split="test",
+            imgsz=IMGSZ,
+            batch=BATCH,
+            device=DEVICE,
+            project=str(SAVE_DIR),
+            name="test_eval",
+            verbose=True,
+        )
+
+        task.upload_artifact("test_results", artifact_object=str(test_results))
 
     task.upload_artifact("output_root", artifact_object=str(OUTPUT_ROOT))
     print("Training complete.")
