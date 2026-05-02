@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 import torch
 import yaml
 from clearml import Task, OutputModel, Dataset
-from torch.utils.data import random_split
+from torch.utils.data import random_split, Subset
 from ultralytics import YOLO
 
 from datasetLoader import PitchSenseDataset
@@ -15,15 +15,14 @@ BASE_PATH = "/home/aanil/Data/aanil/side/yolo/datasets/Soccernet/tracking"
 OUTPUT_ROOT = pathlib.Path("/home/aanil/Data/aanil/side/yolo/outputs/yolo_26n_baseline_200epochs")
 SAVE_DIR = OUTPUT_ROOT / "saved_models"
 
-MODEL_NAME = "yolo26n.yaml"  
+MODEL_NAME = "yolo26n.yaml"
+SUBSET_RATIO = 0.70
 VAL_RATIO = 0.15
 SEED = 10
 EPOCHS = 200
 IMGSZ = 1280
-BATCH = 32  
-DEVICE = [0,1] if torch.cuda.is_available() else "cpu"
-
-
+BATCH = 32
+DEVICE = [0, 1] if torch.cuda.is_available() else "cpu"
 
 class PATHS:
     train_path = pathlib.Path(f"{BASE_PATH}/train")
@@ -83,6 +82,18 @@ def build_class_mapping(dataset) -> Tuple[Dict[str, int], List[str]]:
 def make_unique_stem(img_path: pathlib.Path) -> str:
     match_name = img_path.parent.parent.name
     return f"{match_name}_{img_path.stem}"
+
+
+def create_subset(dataset, subset_ratio: float, seed: int):
+    subset_size = int(len(dataset) * subset_ratio)
+
+    indices = torch.randperm(
+        len(dataset),
+        generator=torch.Generator().manual_seed(seed),
+    ).tolist()
+
+    subset_indices = indices[:subset_size]
+    return Subset(dataset, subset_indices)
 
 
 def export_split(samples, split_name: str, out_root: pathlib.Path, class_map: Dict[str, int]) -> None:
@@ -176,8 +187,8 @@ def copy_best_weights(save_dir: pathlib.Path, run_name: str) -> pathlib.Path | N
 
 def push_yolo_dataset_to_clearml(out_root: pathlib.Path) -> Dataset:
     clearml_dataset = Dataset.create(
-        dataset_name="soccernet_tracking",
-        dataset_project="PitchSense/Datasets",
+        dataset_name="Soccernet_subset",
+        dataset_project="PitchSense_v2",
         description=(
             "YOLO-format SoccerNet tracking export. "
             "Contains images/train, images/val, images/test, "
@@ -194,9 +205,10 @@ def push_yolo_dataset_to_clearml(out_root: pathlib.Path) -> Dataset:
 
     return clearml_dataset
 
+
 def main() -> None:
     task = Task.init(
-        project_name="PitchSense",
+        project_name="PitchSense_v2",
         task_name="yolo26n_baseline",
         task_type=Task.TaskTypes.training,
     )
@@ -207,6 +219,7 @@ def main() -> None:
             "output_root": str(OUTPUT_ROOT),
             "save_dir": str(SAVE_DIR),
             "model_name": MODEL_NAME,
+            "subset_ratio": SUBSET_RATIO,
             "val_ratio": VAL_RATIO,
             "seed": SEED,
             "epochs": EPOCHS,
@@ -227,8 +240,11 @@ def main() -> None:
     train_root = PATHS.train_path
     test_root = PATHS.test_path
 
-    dataset = PitchSenseDataset([train_root])
-    test_dataset = PitchSenseDataset([test_root])
+    full_dataset = PitchSenseDataset([train_root])
+    full_test_dataset = PitchSenseDataset([test_root])
+
+    dataset = create_subset(full_dataset, SUBSET_RATIO, SEED)
+    test_dataset = create_subset(full_test_dataset, SUBSET_RATIO, SEED)
 
     val_size = int(len(dataset) * VAL_RATIO)
     train_size = len(dataset) - val_size
@@ -239,10 +255,12 @@ def main() -> None:
         generator=torch.Generator().manual_seed(SEED),
     )
 
-    print(f"Dataset samples: {len(dataset)}")
+    print(f"Full dataset samples: {len(full_dataset)}")
+    print(f"Subset dataset samples: {len(dataset)}")
     print(f"Train samples: {len(train_dataset)}")
     print(f"Val samples: {len(val_dataset)}")
-    print(f"Test samples: {len(test_dataset)}")
+    print(f"Full test samples: {len(full_test_dataset)}")
+    print(f"Subset test samples: {len(test_dataset)}")
 
     class_map, class_names = build_class_mapping(dataset)
     print("Class mapping:", class_map)
@@ -263,7 +281,7 @@ def main() -> None:
 
     clearml_dataset = push_yolo_dataset_to_clearml(OUTPUT_ROOT)
     task.upload_artifact("clearml_dataset_id", artifact_object=clearml_dataset.id)
-    
+
     run_name = "yolo26n_baseline"
 
     model = YOLO(MODEL_NAME)
