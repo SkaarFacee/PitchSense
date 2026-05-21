@@ -4,14 +4,14 @@ import shutil
 import torch
 from clearml import Task, OutputModel, Dataset
 from ultralytics import YOLO
-from constants import VAL_RATIO,SEED,EPOCHS,IMGSZ,BATCH,DEVICE,CLEARML_DATASET_PROJECT,CLEARML_DATASET_NAME,SAVE_DIR
+from constants import VAL_RATIO,SEED,EPOCHS,IMGSZ,BATCH,DEVICE,CLEARML_DATASET_PROJECT,CLEARML_DATASET_NAME
 
 MODEL_NAME = "yolo26n.yaml"
-OUTPUT_ROOT = pathlib.Path("/home/aanil/Data/aanil/side/yolo/outputs/yolo_26n_baseline_200epochs")
+OUTPUT_ROOT = pathlib.Path("/home/aanil/Data/aanil/side/yolo/outputs/26n_ball_pretrained")
 SAVE_DIR = OUTPUT_ROOT / "saved_models"
 SUBSET_RATIO=1.0
 
-CLEARML_DATASET_ID = None  # set this to a specific dataset ID if you want to pin the exact dataset
+CLEARML_DATASET_ID = '300ca95787984633bc04cf2155a4c968'  # set this to a specific dataset ID if you want to pin the exact dataset
 
 
 def pull_yolo_dataset_from_clearml() -> tuple[Dataset, pathlib.Path]:
@@ -101,7 +101,7 @@ def main() -> None:
         device=DEVICE,
         project=str(SAVE_DIR),
         name=run_name,
-        pretrained=False,
+        pretrained=True,
         verbose=True,
     )
 
@@ -124,7 +124,7 @@ def main() -> None:
             verbose=True,
         )
 
-        task.upload_artifact("test_results", artifact_object=str(test_results))
+        # task.upload_artifact("test_results", artifact_object=str(test_results))
 
     task.upload_artifact("output_root", artifact_object=str(OUTPUT_ROOT))
     print("Training complete.")

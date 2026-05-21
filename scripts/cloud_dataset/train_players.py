@@ -9,7 +9,7 @@ MODEL_NAME = "yolo26n.yaml"
 
 OUTPUT_ROOT = pathlib.Path("/home/aanil/Data/aanil/side/yolo/outputs/yolo_26n_baseline_200epochs")
 from constants import SUBSET_RATIO,VAL_RATIO,SEED,EPOCHS,IMGSZ,BATCH,DEVICE,CLEARML_DATASET_PROJECT,CLEARML_DATASET_NAME,SAVE_DIR
-CLEARML_DATASET_ID = "ac35af84109a4cc4baea55a3d8973ad1"  # set this to a specific dataset ID if you want to pin the exact dataset
+CLEARML_DATASET_ID = "ac35af84109a4cc4baea55a3d8973ad1" 
 
 
 def pull_yolo_dataset_from_clearml() -> tuple[Dataset, pathlib.Path]:

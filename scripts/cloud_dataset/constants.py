@@ -8,5 +8,4 @@ IMGSZ = 1280
 BATCH = 48
 DEVICE = [0, 1] if torch.cuda.is_available() else "cpu"
 CLEARML_DATASET_PROJECT = "PitchSense_v2"
-CLEARML_DATASET_NAME = "Soccernet_subset"
-SAVE_DIR = OUTPUT_ROOT / "saved_models"
+CLEARML_DATASET_NAME = "Soccernet_ball_subset"
